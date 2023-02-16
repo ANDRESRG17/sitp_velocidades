@@ -36,7 +36,7 @@ def positions():
     
     cwd = Path.cwd()
     logging.info('Realizando la consulta de las posiciones ...')
-    file = open(cwd / 'sql\positions.sql', 'r')
+    file = open(cwd / 'sql/positions.sql', 'r')
     q = file.read()
     file.close()
     q = q.replace('previous_date', datetime.datetime.strftime(date.today(), '%Y-%m-%d'))
