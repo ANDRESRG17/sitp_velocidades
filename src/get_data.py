@@ -32,10 +32,11 @@ def conexion_bq():
     return client
 
 
-def data():
+def positions():
     
-    print('Realizando la consulta de las posiciones ...')
-    file = open('/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/sql/dsc.sql', 'r')
+    cwd = Path.cwd()
+    logging.info('Realizando la consulta de las posiciones ...')
+    file = open(cwd / 'sql\positions.sql', 'r')
     q = file.read()
     file.close()
     q = q.replace('previous_date', datetime.datetime.strftime(date.today(), '%Y-%m-%d'))
@@ -47,7 +48,7 @@ def data():
 def speeds():
     
     print('Cargando las posiciones en un df ...')
-    df = data()
+    df = positions()
     df['seconds'] = df['datetime1']+5*3600
     df = df.drop(columns=['datetime1'])
 
@@ -203,4 +204,4 @@ def insert_function():
 # insert_function()
 
 
-conexion_bq()
+print(positions())
