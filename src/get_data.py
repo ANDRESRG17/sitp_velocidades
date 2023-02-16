@@ -47,14 +47,14 @@ def positions():
 
 def speeds():
     
-    print('Cargando las posiciones en un df ...')
+    logging.info('Cargando las posiciones en un df ...')
     df = positions()
     df['seconds'] = df['datetime1']+5*3600
     df = df.drop(columns=['datetime1'])
 
     ### Emparejamiento con el punto siguiente
 
-    print(f'Emparejamiento con posición anterior ...')
+    logging.info(f'Emparejamiento con posición anterior ...')
     df1 = df.groupby(['id_vehiculo', 'id_ruta', 'viaje'])[['seconds', 'coordx', 'coordy']].shift(1)
     df1 = df1.rename(columns = {'seconds':'t1', 'coordx':'x1', 'coordy':'y1'})
     df = pd.concat([df, df1], axis=1)
@@ -63,7 +63,7 @@ def speeds():
 
     ### Cálculo de variables distancia, tiempo y velocidad entre puntos consecutivos
 
-    print(f'Cálculo de variables de distancia, tiempo y velocidad ...')
+    logging.info(f'Cálculo de variables de distancia, tiempo y velocidad ...')
     df['delta_t'] = df['t2'] - df['t1']
     df['delta_d'] = round(((df.x2-df.x1)**2 + (df.y2-df.y1)**2)**0.5,4)
     df['vel'] = df['delta_d']/df['delta_t']
@@ -71,7 +71,7 @@ def speeds():
 
     ### Variables de confirmación
 
-    print(f'Cálculo de variables de confirmación ...')
+    logging.info(f'Cálculo de variables de confirmación ...')
     df['delta_y>0'] = df['y2']>df['y1']
     df['delta_x>0'] = df['x2']>df['x1']
     df['delta_y=0'] = df['y2']==df['y1']
@@ -79,7 +79,7 @@ def speeds():
 
     # Cálculo de los cuadrantes para los Bearings
 
-    print(f'Cálculo de cuadrantes ...')
+    logging.info(f'Cálculo de cuadrantes ...')
     df['cuad'] = None
     df.loc[(df['delta_y>0'] == True)  & (df['delta_x>0'] == True),  'cuad'] = 1
     df.loc[(df['delta_y>0'] == True)  & (df['delta_x>0'] == False), 'cuad'] = 2
@@ -88,13 +88,13 @@ def speeds():
 
     # Cálculo de los Bearings
 
-    print(f'Cálculo de los bearings: ...')
+    logging.info(f'Cálculo de los bearings: ...')
     df['bearing'] = (df['y2']-df['y1'])/(df['x2']-df['x1'])
     df['bearing'] = df['bearing'].apply(lambda x: round(degrees(atan(x)),0))
 
     # Ajuste de los ángulos
 
-    print(f'Ajuste y corrección de los ángulos ...')
+    logging.info(f'Ajuste y corrección de los ángulos ...')
     df['bear'] = None
     df.loc[df.cuad == 1, 'bear'] = (90 - df.bearing)%360
     df.loc[df.cuad == 2, 'bear'] = (90 - (df.bearing + 180))%360
@@ -107,12 +107,12 @@ def speeds():
 
     # Quarter
 
-    print(f'Cálculo de los cuartos de hora ...')
+    logging.info(f'Cálculo de los cuartos de hora ...')
     df['quarter'] = df['instante'].apply(lambda x: '23:45-00:00' if (x.hour == 23)&(x.minute>=45) else f'{x.hour:02}:{(x.minute//15)*15:02}-{(x.hour+1):02}:00' if x.minute>=45 else f'{x.hour:02}:{(x.minute//15)*15:02}-{x.hour:02}:{(x.minute//15+1)*15:02}').replace({'24':'00'})
 
     ### Elementos geoespaciales
 
-    print(f'Obtención de los puntos geoespaciales ...')    
+    logging.info(f'Obtención de los puntos geoespaciales ...')    
     point = []
     df['x_m'] = (df['x1'] + df['x2'])*0.5
     df['y_m'] = (df['y1'] + df['y2'])*0.5
@@ -125,7 +125,7 @@ def speeds():
 
     ### Transformación a un geodataframe
 
-    print('Transformación a un geodataframe ...')
+    logging.info('Transformación a un geodataframe ...')
     dfg = gpd.GeoDataFrame(df, geometry=point, crs="EPSG:32618")
 
     return dfg
@@ -133,7 +133,7 @@ def speeds():
 
 def shape():
     
-    print('Cargue del shape ...')
+    logging.info('Cargue del shape ...')
     df = gpd.read_file('/home/administrador/monitoreo/sitp_speeds_new/congestion/Último_08.01.23/polygons_projected_230108.shp')
     
     df.loc[((df['corredor']=='TV85,CL65BIS,KR85J') & (df['corr_14']==1)), 'corr_14'] = '0'
@@ -146,7 +146,7 @@ def shape():
 
 def union():
 
-    print('Unión de las posiciones con el shape ...')
+    logging.info('Unión de las posiciones con el shape ...')
     un = gpd.sjoin(speeds(), shape())
     un['dif_bear'] = abs(un['bear']-un['bearing_right'])
     un = un[un.dif_bear<=30]
@@ -156,7 +156,7 @@ def union():
 
     ### Selección de variables definitivas
 
-    print('Selección de las variables definitivas y agrupación: ...')
+    logging.info('Selección de las variables definitivas y agrupación: ...')
     un = un.loc[:,['fecha', 'hora', 'tid', 'corredor', 'from_to', 'sentido', 'vel_kmh']]
     un = un.groupby(['fecha', 'hora', 'tid', 'corredor', 'from_to', 'sentido'])['vel_kmh'].mean().reset_index()
      
@@ -192,7 +192,7 @@ def insert_function():
             chunk.to_sql(name='velocidades_sitp', con=SQLALCHEMY_CONNECTION, schema='dia_sin_carro', if_exists='append', method='multi', index=False)
             
         except:
-            print("DB operational Error: ")
+            logging.info("DB operational Error: ")
 
 
 # df = union()
@@ -204,4 +204,4 @@ def insert_function():
 # insert_function()
 
 
-print(positions())
+print(speeds())
