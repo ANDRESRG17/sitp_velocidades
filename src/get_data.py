@@ -10,6 +10,10 @@ from datetime import date
 from math import degrees, atan
 from shapely.geometry import Point
 import yaml
+from pathlib import Path
+import logging
+
+logging.basicConfig(filename='speeds.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 
 t = datetime.datetime.now()
@@ -19,8 +23,9 @@ dir = f'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/data/{n}.csv
 
 def conexion_bq():
     
-    print('Conectando a las base de TMSA ...')
-    key_path = '/monitoreo/helios/smart-helios-3.json'
+    cwd = Path.cwd()
+    logging.info('Conectando a las base de TMSA ...')
+    key_path = cwd / 'helios/smart-helios-3.json'
     credentials = service_account.Credentials.from_service_account_file(key_path,scopes=["https://www.googleapis.com/auth/cloud-platform"])
     client = bigquery.Client(credentials=credentials, project='transmilenio-dwh-shvpc')
 
@@ -189,10 +194,13 @@ def insert_function():
             print("DB operational Error: ")
 
 
-df = union()
+# df = union()
 
-df.to_csv(dir, index=False, decimal=',', sep='|')
+# df.to_csv(dir, index=False, decimal=',', sep='|')
 
-df = pd.read_csv(dir, decimal=',', sep='|')
+# df = pd.read_csv(dir, decimal=',', sep='|')
 
-insert_function()
+# insert_function()
+
+
+conexion_bq()
