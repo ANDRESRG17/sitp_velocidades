@@ -133,14 +133,10 @@ def speeds():
 
 def shape():
     
+    cwd = Path.cwd()
     logging.info('Cargue del shape ...')
-    df = gpd.read_file('/home/administrador/monitoreo/sitp_speeds_new/congestion/Último_08.01.23/polygons_projected_230108.shp')
+    df = gpd.read_file(cwd / 'shape_wst/shape_malla_wst_2023_01_31.shp')
     
-    df.loc[((df['corredor']=='TV85,CL65BIS,KR85J') & (df['corr_14']==1)), 'corr_14'] = '0'
-    df.loc[((df['corredor']=='CL.26.SUR') & (df['corr_14']==1)), 'corr_14'] = '0'
-    df.loc[(df['tid'].apply(lambda x: x in ['1000766', '1000767', '1000768', '1000769', '1000770', '1000771', '1001207', '1001208', '1001209', '1001210', '1001211', '1001212', '1001990', '1001991'])), 'corredor'] = 'AV.AUTOSUR'  
-    df['corredor'] = df['corredor'].apply(lambda x: x.replace('NQS', 'AV.NQS').replace('CL.26', 'AV.CL.26').replace('AUTONORTE', 'AV.AUTONORTE').replace('AV.68', 'AV.KR.68'))
-
     return df
 
 
@@ -204,4 +200,4 @@ def insert_function():
 # insert_function()
 
 
-print(speeds())
+print(shape())
