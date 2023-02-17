@@ -138,9 +138,9 @@ def shape():
     
     cwd = Path.cwd()
     logging.info('Cargue del shape ...')
-    df = gpd.read_file(cwd / 'shape_wst/shape_malla_wst_2023_01_31.shp')
+    df = gpd.read_file(cwd / 'wst_2023-02-16/wst_shape.shp')
     
-    df = df.drop(columns = ['FID_', 'SHAPE_Leng', 'SHAPE_Area'])
+    # df = df.drop(columns = ['FID_', 'SHAPE_Leng', 'SHAPE_Area'])
     
     return df
 
