@@ -139,6 +139,7 @@ def shape():
     cwd = Path.cwd()
     logging.info('Cargue del shape ...')
     df = gpd.read_file(cwd / 'wst_2023-02-16/wst_shape.shp')
+    df = df.rename(columns = {'corr_14': 'principal', 'carril_pre': 'preferencial'})
     
     # df = df.drop(columns = ['FID_', 'SHAPE_Leng', 'SHAPE_Area'])
     
@@ -157,28 +158,10 @@ def union():
     ### Selección de variables definitivas
 
     logging.info('Selección de las variables definitivas y agrupación: ...')
-    df = df.loc[:,['fecha', 'hora', 'quarter','tid', 'corredor', 'from_to', 'sentido', 'corr_14', 'carril_pre', 'cod_loc', 'localidad', 'vel_kmh']]
-    df = df.groupby(['fecha', 'hora', 'quarter', 'tid', 'corredor', 'from_to', 'sentido', 'corr_14', 'carril_pre', 'cod_loc', 'localidad'])['vel_kmh'].mean().reset_index()
+    df = df.loc[:,['fecha', 'hora', 'quarter','tid', 'corredor', 'from_to', 'sentido', 'principal', 'preferencial', 'cod_loc', 'localidad', 'vel_kmh']]
+    df = df.groupby(['fecha', 'hora', 'quarter', 'tid', 'corredor', 'from_to', 'sentido', 'principal', 'preferencial', 'cod_loc', 'localidad'])['vel_kmh'].mean().reset_index()
     
-    
-    ## Resultado para todos los corredores
-    
-    tot = df.copy()
-    tot = tot.drop(columns = ['corr_14', 'carril_pre'])
-    
-    ## Resultado sólo para los 14 corredores principales
-    
-    prin = df.copy()
-    prin = prin[prin['corr_14']==1]
-    prin = prin.drop(columns = ['corr_14', 'carril_pre'])
-    
-    ## Resultado sólo para los corredores con carril preferencial
-    
-    pref = df.copy()
-    pref = pref[pref['carril_pre']==1]
-    pref = pref.drop(columns = ['corr_14', 'carril_pre'])
-    
-    return tot, prin, pref
+    return df
 
 
 def insert_function():
@@ -213,11 +196,6 @@ def insert_function():
             logging.info("DB operational Error: ")
 
 
-# df = union()
-
-# df.to_csv(dir, index=False, decimal=',', sep='|')
-
-# df = pd.read_csv(dir, decimal=',', sep='|')
 
 # insert_function()
 
