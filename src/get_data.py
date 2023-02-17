@@ -13,6 +13,9 @@ import yaml
 from pathlib import Path
 import logging
 
+pd.set_option('display.max_columns', None)
+
+
 logging.basicConfig(filename='speeds.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 
@@ -112,7 +115,7 @@ def speeds():
 
     ### Elementos geoespaciales
 
-    logging.info(f'Obtención de los puntos geoespaciales ...')    
+    logging.info(f'Obtención de los puntos geoespaciales ...')
     point = []
     df['x_m'] = (df['x1'] + df['x2'])*0.5
     df['y_m'] = (df['y1'] + df['y2'])*0.5
@@ -136,6 +139,8 @@ def shape():
     cwd = Path.cwd()
     logging.info('Cargue del shape ...')
     df = gpd.read_file(cwd / 'shape_wst/shape_malla_wst_2023_01_31.shp')
+    
+    df = df.drop(columns = ['FID_', 'SHAPE_Leng', 'SHAPE_Area'])
     
     return df
 
