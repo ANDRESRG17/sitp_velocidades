@@ -148,20 +148,37 @@ def shape():
 def union():
 
     logging.info('Unión de las posiciones con el shape ...')
-    un = gpd.sjoin(speeds(), shape())
-    un['dif_bear'] = abs(un['bear']-un['bearing_right'])
-    un = un[un.dif_bear<=30]
-    un = un[un['corr_14']==1]
-    un['hora'] = un['quarter'].apply(lambda x: int(x[:2]))
-    un['vel_kmh'] = un['vel']*3.6
-
+    df = gpd.sjoin(speeds(), shape())
+    df['dif_bear'] = abs(df['bear']-df['bearing_right'])
+    df = df[df.dif_bear<=30]
+    df['hora'] = df['quarter'].apply(lambda x: int(x[:2]))
+    df['vel_kmh'] = df['vel']*3.6
+    
     ### Selección de variables definitivas
 
     logging.info('Selección de las variables definitivas y agrupación: ...')
-    un = un.loc[:,['fecha', 'hora', 'tid', 'corredor', 'from_to', 'sentido', 'vel_kmh']]
-    un = un.groupby(['fecha', 'hora', 'tid', 'corredor', 'from_to', 'sentido'])['vel_kmh'].mean().reset_index()
-     
-    return un
+    df = df.loc[:,['fecha', 'hora', 'quarter','tid', 'corredor', 'from_to', 'sentido', 'corr_14', 'carril_pre', 'cod_loc', 'localidad', 'vel_kmh']]
+    df = df.groupby(['fecha', 'hora', 'quarter', 'tid', 'corredor', 'from_to', 'sentido', 'corr_14', 'carril_pre', 'cod_loc', 'localidad'])['vel_kmh'].mean().reset_index()
+    
+    
+    ## Resultado para todos los corredores
+    
+    tot = df.copy()
+    tot = tot.drop(columns = ['corr_14', 'carril_pre'])
+    
+    ## Resultado sólo para los 14 corredores principales
+    
+    prin = df.copy()
+    prin = prin[prin['corr_14']==1]
+    prin = prin.drop(columns = ['corr_14', 'carril_pre'])
+    
+    ## Resultado sólo para los corredores con carril preferencial
+    
+    pref = df.copy()
+    pref = pref[pref['carril_pre']==1]
+    pref = pref.drop(columns = ['corr_14', 'carril_pre'])
+    
+    return tot, prin, pref
 
 
 def insert_function():
@@ -205,4 +222,4 @@ def insert_function():
 # insert_function()
 
 
-print(shape())
+print(union())
