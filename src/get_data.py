@@ -19,39 +19,62 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 
-t = datetime.datetime.now() ######> nombrar las variables descriptivamente, en la linea 19 se entiende que es t, pero despues no... (revisar todo los scripts y hacer elos ajustes.)
-n = t.strftime('%Y-%m-%d') + '--' + t.strftime('%H')
-dir = f'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/data/{n}.csv' ######> rutas relativas (usar pathlib)
-
-
-def conexion_bq(): ######> Usar try-except para capturar excepciones, al final del try poner loggin de conexion exitosa, y al final de except lo contrario.
+def conexion_bigquery() -> bigquery.client.Client:
     
-    cwd = Path.cwd() ######> no se debria usar cwd para nombrar variables, no se deberia usar ningun apalabra reservada o que sea el nombre de clases, funciones o metodos
-    logging.info('Conectando a las base de TMSA ...')
-    key_path = cwd / 'helios/smart-helios-3.json'
-    credentials = service_account.Credentials.from_service_account_file(key_path,scopes=["https://www.googleapis.com/auth/cloud-platform"])
-    client = bigquery.Client(credentials=credentials, project='transmilenio-dwh-shvpc')
+    """_summary_
 
+    Returns:
+        _type_: _description_
+    """
+    
+    current_dir = Path.cwd()
+    
+    try:
+        logging.info('Conectando a las base de TMSA ...')
+        key_path = current_dir / 'helios/smart-helios-3.json'
+        credentials = service_account.Credentials.from_service_account_file(key_path,scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        client = bigquery.Client(credentials=credentials, project='transmilenio-dwh-shvpc')
+        logging.info('Conexión exitosa')
+    except:
+        logging.info('La conexión a la base de datos de TMSA no fue exitosa')
+    
     return client
 
 
-def positions(): ######> Usar try-except para capturar excepciones, al final del try........................
-    ######> Usar nombres decriptivos para las funciones, positions() no describe los que hace la función (igual para todas las funciones)    
-    cwd = Path.cwd()
-    logging.info('Realizando la consulta de las posiciones ...')
-    file = open(cwd / 'sql/positions.sql', 'r') ######> Abrir archivo en un contexto con with............
-    q = file.read()
-    file.close()
-    q = q.replace('previous_date', datetime.datetime.strftime(date.today(), '%Y-%m-%d'))
-    df = (conexion_bq().query(q).result().to_dataframe(create_bqstorage_client=True))
+def get_data_positions(cliente: bigquery.client.Client) -> pd.DataFrame:
+    
+    """_summary_
 
-    return df ######> Usar nombres decriptivos para los dataframes
+    Returns:
+        _type_: _description_
+    """
+    
+    current_dir = Path.cwd()
+    
+    try:
+        logging.info('Realizando la consulta de las posiciones ...')
+        with open(current_dir / 'sql/positions.sql', 'r') as query:
+            q = query.read()
+        q = q.replace('previous_date', datetime.datetime.strftime(date.today(), '%Y-%m-%d'))
+        df = (cliente.query(q).result().to_dataframe(create_bqstorage_client=True))
+        logging.info('Consulta exitosa')
+    except:
+        logging.info('La consulta no fue exitosa')
+
+    return df
 
 
-def speeds(df):
+def get_speeds(data_positions: pd.DataFrame) -> pd.DataFrame:
+    
+
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     
     logging.info('Cargando las posiciones en un df ...')
-    df = positions()
+    df = data_positions.copy()
     df['seconds'] = df['datetime1']+5*3600
     df = df.drop(columns=['datetime1'])
 
@@ -141,15 +164,13 @@ def shape():
     df = gpd.read_file(cwd / 'wst_2023-02-16/wst_shape.shp')
     df = df.rename(columns = {'corr_14': 'principal', 'carril_pre': 'preferencial'})
     
-    # df = df.drop(columns = ['FID_', 'SHAPE_Leng', 'SHAPE_Area'])
-    
     return df
 
 
-def union(data_sppeeds, data_shape): ######> ajustar nombres de variables de esta función
+def union(data_speeds, data_shape): ######> ajustar nombres de variables de esta función
 
     logging.info('Unión de las posiciones con el shape ...')
-    df = gpd.sjoin(speeds(), shape())
+    df = gpd.sjoin(data_speeds, data_shape)
     df['dif_bear'] = abs(df['bear']-df['bearing_right'])
     df = df[df.dif_bear<=30]
     df['hora'] = df['quarter'].apply(lambda x: int(x[:2]))
@@ -182,7 +203,7 @@ def insert_function():
     i1 = 1
     i2 = chunksize
     
-    for chunk in pd.read_csv(dir, decimal=',', sep='|', chunksize=chunksize):
+    for chunk in union(speeds(positions()), shape()):
         
         i1 = i1 + chunksize
         i2 = i2 + chunksize

@@ -9,7 +9,7 @@ cligj==0.7.2
 db-dtypes==1.0.5
 Fiona==1.9.1
 GeoAlchemy2==0.12.5
-geopandas @ file:///mnt/c/Users/aarin/OneDrive/Documentos/work/maquina_virtual/sitp_velocidades/geopandas
+geopandas @ file:geopandas
 google==3.0.0
 google-api-core==2.11.0
 google-auth==2.16.0
