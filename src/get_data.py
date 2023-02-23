@@ -48,7 +48,7 @@ def positions(): ######> Usar try-except para capturar excepciones, al final del
     return df ######> Usar nombres decriptivos para los dataframes
 
 
-def speeds():
+def speeds(df):
     
     logging.info('Cargando las posiciones en un df ...')
     df = positions()
@@ -146,7 +146,7 @@ def shape():
     return df
 
 
-def union():
+def union(data_sppeeds, data_shape): ######> ajustar nombres de variables de esta función
 
     logging.info('Unión de las posiciones con el shape ...')
     df = gpd.sjoin(speeds(), shape())
