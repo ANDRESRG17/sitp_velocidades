@@ -7,13 +7,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(mess
 
 
 def sitp_speeds_workflow():
-  """docuementar...
   """
-   raw_data       = positions()
-   geo_info       = shape()
-   data_processed = speeds(raw_data)
-   data_speeds    = union(data_processed, geo_info)
-   insert_function(data_speeds)
+  docuementar...
+  """
+  raw_data       = positions()
+  geo_info       = shape()
+  data_processed = speeds(raw_data)
+  data_speeds    = union(data_processed, geo_info)
+  insert_function(data_speeds)
 
 if __name__ == "__main__":
   sitp_speeds_workflow()
