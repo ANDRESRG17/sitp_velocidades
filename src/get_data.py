@@ -13,20 +13,20 @@ import yaml
 from pathlib import Path
 import logging
 
-pd.set_option('display.max_columns', None)
 
 
-logging.basicConfig(filename='speeds.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 
-t = datetime.datetime.now()
+t = datetime.datetime.now() ######> nombrar las variables descriptivamente, en la linea 19 se entiende que es t, pero despues no... (revisar todo los scripts y hacer elos ajustes.)
 n = t.strftime('%Y-%m-%d') + '--' + t.strftime('%H')
-dir = f'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/data/{n}.csv'
+dir = f'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/data/{n}.csv' ######> rutas relativas (usar pathlib)
 
 
-def conexion_bq():
+def conexion_bq(): ######> Usar try-except para capturar excepciones, al final del try poner loggin de conexion exitosa, y al final de except lo contrario.
     
-    cwd = Path.cwd()
+    cwd = Path.cwd() ######> no se debria usar cwd para nombrar variables, no se deberia usar ningun apalabra reservada o que sea el nombre de clases, funciones o metodos
     logging.info('Conectando a las base de TMSA ...')
     key_path = cwd / 'helios/smart-helios-3.json'
     credentials = service_account.Credentials.from_service_account_file(key_path,scopes=["https://www.googleapis.com/auth/cloud-platform"])
@@ -35,17 +35,17 @@ def conexion_bq():
     return client
 
 
-def positions():
-    
+def positions(): ######> Usar try-except para capturar excepciones, al final del try........................
+    ######> Usar nombres decriptivos para las funciones, positions() no describe los que hace la función (igual para todas las funciones)    
     cwd = Path.cwd()
     logging.info('Realizando la consulta de las posiciones ...')
-    file = open(cwd / 'sql/positions.sql', 'r')
+    file = open(cwd / 'sql/positions.sql', 'r') ######> Abrir archivo en un contexto con with............
     q = file.read()
     file.close()
     q = q.replace('previous_date', datetime.datetime.strftime(date.today(), '%Y-%m-%d'))
     df = (conexion_bq().query(q).result().to_dataframe(create_bqstorage_client=True))
 
-    return df
+    return df ######> Usar nombres decriptivos para los dataframes
 
 
 def speeds():
@@ -166,8 +166,8 @@ def union():
 
 def insert_function():
     
-    credentials_postgresql = None
-    with open(r'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/credentials_postgresql.yaml') as file:
+    
+    with open(r'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/credentials_postgresql.yaml') as file: ######> el aqchivo yaml debe quedar en la raiz del repo y llamarse config.yaml
         credentials_postgresql = yaml.load(file, Loader=yaml.FullLoader)
         
     user     = credentials_postgresql['user']
@@ -178,7 +178,7 @@ def insert_function():
     
     SQLALCHEMY_CONNECTION = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
 
-    chunksize = 10000
+    chunksize = 10000 ######> revisar el valor del chinksize, para una base de datos pg creo que es 1000....
     i1 = 1
     i2 = chunksize
     
