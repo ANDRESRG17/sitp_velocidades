@@ -63,4 +63,3 @@ def load():
         )
 
 
-load()
