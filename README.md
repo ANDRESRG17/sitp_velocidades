@@ -5,8 +5,10 @@ Cálculo de las velocidades del SITP a partir de las posiciones log
 ## Ajustes pendientes:
  * Es necesario trabajar en la rama main, y eliminar la rama master. Tener cuidado al realizar eso!!!. Por eso es aconsejable realizar ese procedimiento al iniciar el repositorio. 
  * Es necesario utilizar rutas relativas a los arcchivos, de lo contarios no se podrá acceder a los recursos. P.ej.: 
-  - En requierements: geopandas @ file:///mnt/c/Users/aarin/OneDrive/Documentos/work/maquina_virtual/sitp_velocidades/geopandas
-  - En job.sh /home/administrador/monitoreo/anaconda3/envs/sitp_speeds_new/bin/python3
+ 
+ -- En requierements: geopandas @ file:///mnt/c/Users/aarin/OneDrive/Documentos/work/maquina_virtual/sitp_velocidades/geopandas
+ 
+ * El job.sh no es necesario. Tener presente que no se utilizará crontab para ejecutar el script.
  
  * Ubicar todos los archivos .sql dentro de la carpeta sql, me refiero al query.sql que está en la raiz del directorio.
  * Ubicar los notebooks dentro de la carpeta notebooks
