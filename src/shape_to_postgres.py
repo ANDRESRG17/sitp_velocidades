@@ -8,7 +8,7 @@ from shapely import wkt
 from pathlib import Path
 import yaml
 
-pd.set_option('display.max_columns', None)
+
 
 
 def conection():
