@@ -197,7 +197,4 @@ def insert_function():
 
 
 
-# insert_function()
 
-
-print(union())
