@@ -1,7 +1,3 @@
--- Table: dia_sin_carro.velocidades_sitp
-
--- DROP TABLE IF EXISTS dia_sin_carro.velocidades_sitp;
-
 CREATE TABLE IF NOT EXISTS dia_sin_carro.velocidades_sitp
 (
     fecha date NOT NULL,
