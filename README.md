@@ -15,7 +15,7 @@ Cálculo de las velocidades del SITP a partir de las posiciones log
 
  * Ubicar los notebooks dentro de la carpeta notebooks (Ok)
  
- * Es necesario documentar las funciones doc strings y usar type hints para los parametros de funciones (no para otras variables).
+ * Es necesario documentar las funciones doc strings y usar type hints para los parametros de funciones (no para otras variables). (Ok)
  
  * Reemplazar los comentarios de este readme con información que complemente la documentación del código, por ejemplo debe decir cada cuanto se ejecuta el script, cada cuanto se actualiza la información geográfica, problemas detectados que se deban corregir, consideraciones a tener en cuenta y que no son evidentes al leer el código, etc
  

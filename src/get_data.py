@@ -4,14 +4,15 @@ import numpy as np
 import datetime
 import pandas as pd
 import geopandas as gpd
+import yaml
+import logging
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from datetime import date
 from math import degrees, atan
 from shapely.geometry import Point
-import yaml
+from typing import Any, Optional
 from pathlib import Path
-import logging
 
 
 
@@ -21,10 +22,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(mess
 
 def conexion_bigquery() -> bigquery.client.Client:
     
-    """_summary_
+    """
+    Summary:
+        Esta función crea la conexión a la base de datos de Transmilenio usando las credenciales que 
+        se encuentran en la carpeta helios
 
     Returns:
-        _type_: _description_
+        _type_: el cliente a la conexión de la base de datos de bigquery de transmilenio
     """
     
     current_dir = Path.cwd()
@@ -41,12 +45,17 @@ def conexion_bigquery() -> bigquery.client.Client:
     return client
 
 
+
 def get_data_positions(cliente: bigquery.client.Client) -> pd.DataFrame:
     
-    """_summary_
+    """
+    Summary:
+        Esta función hace la consulta del archivo sql/positions.sql de los datos de
+        posiciones del sitp zonal del periodo de tiempo especificado en la fila 24 del archivo,
+        y el parámetro de la fución es el cliente creado en la función conexion_bigquery.
 
     Returns:
-        _type_: _description_
+        _type_: El dataframe con todos los registros de posiciones
     """
     
     current_dir = Path.cwd()
@@ -64,13 +73,19 @@ def get_data_positions(cliente: bigquery.client.Client) -> pd.DataFrame:
     return df
 
 
-def get_speeds(data_positions: pd.DataFrame) -> pd.DataFrame:
+
+def get_speeds(data_positions: pd.DataFrame) -> gpd.GeoDataFrame:
     
 
-    """_summary_
+    """
+    Summary:
+        Esta función transforma las posiciones obtenidas de la función get_data_positions
+        en velocidades por medio del cálculo de las distancias entre puntos consecutivos
+        del mismo vehículo y los tiempos transcurridos entre punto y punto y el ángulo (bearing)
+        que forman estos para cruzar posteriormente con el shape de la malla vial
 
     Returns:
-        _type_: _description_
+        _type_: El geodataframe con velocidades, puntos espaciales, bearings y variables de tiempo
     """
     
     logging.info('Cargando las posiciones en un df ...')
@@ -85,7 +100,7 @@ def get_speeds(data_positions: pd.DataFrame) -> pd.DataFrame:
     df1 = df1.rename(columns = {'seconds':'t1', 'coordx':'x1', 'coordy':'y1'})
     df = pd.concat([df, df1], axis=1)
     df = df.rename(columns={'seconds': 't2', 'coordx': 'x2', 'coordy': 'y2'})
-    df = df.dropna()    
+    df = df.dropna()
 
     ### Cálculo de variables distancia, tiempo y velocidad entre puntos consecutivos
 
@@ -157,17 +172,35 @@ def get_speeds(data_positions: pd.DataFrame) -> pd.DataFrame:
     return dfg
 
 
-def shape():
+
+def get_shape() -> gpd.GeoDataFrame:
     
-    cwd = Path.cwd()
+    '''
+    Summary:
+        Esta función carga el shape de la malla vial actual de Waze y Traffic Now y lo convierte
+        en un geodataframe para su posterior cruce con las velocidades.
+    Returns:
+        _type_: El geodataframe con los atriburos de la malla vial
+    '''
+    
+    current_dir = Path.cwd()
     logging.info('Cargue del shape ...')
-    df = gpd.read_file(cwd / 'wst_2023-02-16/wst_shape.shp')
-    df = df.rename(columns = {'corr_14': 'principal', 'carril_pre': 'preferencial'})
+    gdf = gpd.read_file(current_dir / 'wst_2023-02-16/wst_shape.shp')
+    gdf = gdf.rename(columns = {'corr_14': 'principal', 'carril_pre': 'preferencial'})
     
-    return df
+    return gdf
 
 
-def union(data_speeds, data_shape): ######> ajustar nombres de variables de esta función
+def union(data_speeds: gpd.GeoDataFrame, data_shape: gpd.GeoDataFrame) -> pd.DataFrame:
+    
+    '''
+    Summary:
+        Esta función realiza el cruce geospacial entre los geodataframes de las velocidades de la función
+        get_speeds y el del shape de la malla vial de la función get_shape.
+    Returns:
+        _type_: El dataframe definitivo con el cálculo de las velocidades de cadas uno de los tramos de los
+        corredores de la malla vial.
+    '''
 
     logging.info('Unión de las posiciones con el shape ...')
     df = gpd.sjoin(data_speeds, data_shape)
@@ -185,10 +218,19 @@ def union(data_speeds, data_shape): ######> ajustar nombres de variables de esta
     return df
 
 
-def insert_function():
+
+def insert_function(union) -> Any:
     
+    '''
+    Sumary:
+        Esta función carga el dataframe de la función union en la base de datos
+    Returns:
+        _type_: Esta función no retorna ningún valor
+    '''
     
-    with open(r'/home/administrador/monitoreo/sitp_speeds_new/Dia_sin_carro/credentials_postgresql.yaml') as file: ######> el aqchivo yaml debe quedar en la raiz del repo y llamarse config.yaml
+    current_dir = Path.cwd()
+    
+    with open(current_dir / 'config.yaml') as file:
         credentials_postgresql = yaml.load(file, Loader=yaml.FullLoader)
         
     user     = credentials_postgresql['user']
@@ -199,23 +241,20 @@ def insert_function():
     
     SQLALCHEMY_CONNECTION = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
 
-    chunksize = 10000 ######> revisar el valor del chinksize, para una base de datos pg creo que es 1000....
+    chunksize = 10000
     i1 = 1
     i2 = chunksize
     
-    for chunk in union(speeds(positions()), shape()):
+    df = union.copy()
+    
+    for chunk in df:
         
         i1 = i1 + chunksize
         i2 = i2 + chunksize
         
         try:
-            
             chunk.columns = ["fecha", "hora", "tid", "corredor", "from_to", "sentido", "vel_kmh"]
             chunk.to_sql(name='velocidades_sitp', con=SQLALCHEMY_CONNECTION, schema='dia_sin_carro', if_exists='append', method='multi', index=False)
-            
+            logging.info('Carga exitosa a la base de datos')
         except:
             logging.info("DB operational Error: ")
-
-
-
-
