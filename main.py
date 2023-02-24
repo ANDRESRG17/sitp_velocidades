@@ -1,18 +1,17 @@
-from src.get_data import positions, shape, speeds, union, insert_function ######> ajustar nombrees de funciones de acuerdo a los cambios en get_data()
+from src.get_data import conexion_bigquery, get_data_positions, get_speeds, get_shape, union, insert_function
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
-######> en este archivo se deberian traer las fucniones de get_data y orquestar el fuljo de trabajo, algo así:
-
 
 def sitp_speeds_workflow():
   """
-  docuementar...
+    Esta función consolida el algoritmo de get_data y carga los datos en la base de datos
   """
-  raw_data       = positions()
-  geo_info       = shape()
-  data_processed = speeds(raw_data)
+  conexion       = conexion_bigquery()
+  raw_data       = get_data_positions(conexion)
+  geo_info       = get_shape()
+  data_processed = get_speeds(raw_data)
   data_speeds    = union(data_processed, geo_info)
   insert_function(data_speeds)
 

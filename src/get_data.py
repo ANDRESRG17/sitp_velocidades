@@ -233,28 +233,29 @@ def insert_function(union) -> Any:
     with open(current_dir / 'config.yaml') as file:
         credentials_postgresql = yaml.load(file, Loader=yaml.FullLoader)
         
-    user     = credentials_postgresql['user']
-    password = credentials_postgresql['password']
-    host     = credentials_postgresql['host']
-    db_name  = credentials_postgresql['db']
-    port     = str(credentials_postgresql['port'])
+    user     = credentials_postgresql['postgres_db']['user']
+    password = credentials_postgresql['postgres_db']['password']
+    host     = credentials_postgresql['postgres_db']['host']
+    db_name  = credentials_postgresql['postgres_db']['db']
+    port     = str(credentials_postgresql['postgres_db']['port'])
     
     SQLALCHEMY_CONNECTION = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
 
     chunksize = 10000
-    i1 = 1
-    i2 = chunksize
+
+    df = union
+    print(df)
     
-    df = union.copy()
-    
-    for chunk in df:
+    for i in range(int(len(df)/chunksize)+1):
         
-        i1 = i1 + chunksize
-        i2 = i2 + chunksize
+        imin = i*chunksize
+        imax = imin + chunksize
+        
+        chunk = df[imin:imax]
         
         try:
-            chunk.columns = ["fecha", "hora", "tid", "corredor", "from_to", "sentido", "vel_kmh"]
-            chunk.to_sql(name='velocidades_sitp', con=SQLALCHEMY_CONNECTION, schema='dia_sin_carro', if_exists='append', method='multi', index=False)
+            chunk.columns = ['fecha', 'hora', 'quarter','tid', 'corredor', 'from_to', 'sentido', 'principal', 'preferencial', 'cod_loc', 'localidad', 'vel_kmh']
+            chunk.to_sql(name='velocidades_prueba', con=SQLALCHEMY_CONNECTION, schema='test', if_exists='append', method='multi', index=False)
             logging.info('Carga exitosa a la base de datos')
         except:
             logging.info("DB operational Error: ")

@@ -2,33 +2,6 @@
 
 Cálculo de las velocidades del SITP a partir de las posiciones log
 
-## Ajustes pendientes:
- * Es necesario trabajar en la rama main, y eliminar la rama master. Tener cuidado al realizar eso!!!. Por eso es aconsejable realizar ese procedimiento al iniciar el repositorio. (Ok)
- 
- * Es necesario utilizar rutas relativas a los arcchivos, de lo contarios no se podrá acceder a los recursos. P.ej.:
- 
- -- En requierements: geopandas @ file:///mnt/c/Users/aarin/OneDrive/Documentos/work/maquina_virtual/sitp_velocidades/geopandas (Ok)
- 
- * El job.sh no es necesario. Tener presente que no se utilizará crontab para ejecutar el script. (Ok)
- 
- * Ubicar todos los archivos .sql dentro de la carpeta sql, me refiero al query.sql que está en la raiz del directorio. (Ok)
-
- * Ubicar los notebooks dentro de la carpeta notebooks (Ok)
- 
- * Es necesario documentar las funciones doc strings y usar type hints para los parametros de funciones (no para otras variables). (Ok)
- 
- * Reemplazar los comentarios de este readme con información que complemente la documentación del código, por ejemplo debe decir cada cuanto se ejecuta el script, cada cuanto se actualiza la información geográfica, problemas detectados que se deban corregir, consideraciones a tener en cuenta y que no son evidentes al leer el código, etc
- 
- * Así mismo se deberá incluir un indice del repositorio, al final dejo un ejemplo.
-
- * Se realizan algunos ajustes en varios archivos y se dejan algunos comentarios con inquietudes. Es necesario realizar un pull y revisar los ajustes y al final eliminar los comentarios.
-
-
-
-########################
-
-
-
 
 # Gestor de flujos de trabajo de Procesos ETL y pipelines de proyectos de Machine Learning.
 
