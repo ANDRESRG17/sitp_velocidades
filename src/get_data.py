@@ -11,7 +11,7 @@ from google.oauth2 import service_account
 from datetime import date
 from math import degrees, atan
 from shapely.geometry import Point
-from typing import Any, Optional
+from typing import Any
 from pathlib import Path
 
 
@@ -244,7 +244,6 @@ def insert_function(union) -> Any:
     chunksize = 10000
 
     df = union
-    print(df)
     
     for i in range(int(len(df)/chunksize)+1):
         
