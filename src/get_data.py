@@ -1,5 +1,6 @@
 ### Importe de las librerías a utilizar
 
+import math
 import numpy as np
 import datetime
 import pandas as pd
@@ -14,7 +15,7 @@ from shapely.geometry import Point
 from typing import Any
 from pathlib import Path
 
-
+pd.set_option('display.max_columns', None)
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -70,6 +71,7 @@ def get_data_positions(cliente: bigquery.client.Client) -> pd.DataFrame:
     except:
         logging.info('La consulta no fue exitosa')
 
+    
     return df
 
 
@@ -90,8 +92,7 @@ def get_speeds(data_positions: pd.DataFrame) -> gpd.GeoDataFrame:
     
     logging.info('Cargando las posiciones en un df ...')
     df = data_positions.copy()
-    df['seconds'] = df['datetime1']+5*3600
-    df = df.drop(columns=['datetime1'])
+    df['seconds'] = df['instante'].apply(lambda x: int(x.timestamp() - 5*3600))
 
     ### Emparejamiento con el punto siguiente
 
@@ -149,8 +150,9 @@ def get_speeds(data_positions: pd.DataFrame) -> gpd.GeoDataFrame:
     # Quarter
 
     logging.info(f'Cálculo de los cuartos de hora ...')
-    df['quarter'] = df['instante'].apply(lambda x: '23:45-00:00' if (x.hour == 23)&(x.minute>=45) else f'{x.hour:02}:{(x.minute//15)*15:02}-{(x.hour+1):02}:00' if x.minute>=45 else f'{x.hour:02}:{(x.minute//15)*15:02}-{x.hour:02}:{(x.minute//15+1)*15:02}').replace({'24':'00'})
-
+    cada = 15
+    df['quarter'] = df['instante'].apply(lambda x: (x.replace(minute=(math.floor(x.minute/cada)*cada), second=0, microsecond=0)).time())
+    
     ### Elementos geoespaciales
 
     logging.info(f'Obtención de los puntos geoespaciales ...')
@@ -169,6 +171,7 @@ def get_speeds(data_positions: pd.DataFrame) -> gpd.GeoDataFrame:
     logging.info('Transformación a un geodataframe ...')
     dfg = gpd.GeoDataFrame(df, geometry=point, crs="EPSG:32618")
 
+
     return dfg
 
 
@@ -185,8 +188,8 @@ def get_shape() -> gpd.GeoDataFrame:
     
     current_dir = Path.cwd()
     logging.info('Cargue del shape ...')
-    gdf = gpd.read_file(current_dir / 'shapes\wst_2023-03-15\polygons_230315.shp')
-    gdf = gdf.rename(columns = {'corr_14': 'principal', 'carril_pre': 'preferencial'})
+    gdf = gpd.read_file(current_dir / 'shapes/wst-2023-03-15/polygons_loc_20230315.shp')
+    gdf = gdf.rename(columns={'preferenci':'preferencial'})
     
     return gdf
 
@@ -206,17 +209,18 @@ def union(data_speeds: gpd.GeoDataFrame, data_shape: gpd.GeoDataFrame) -> pd.Dat
     df = gpd.sjoin(data_speeds, data_shape)
     df['dif_bear'] = abs(df['bear']-df['bearing_right'])
     df = df[df.dif_bear<=30]
-    df['hora'] = df['quarter'].apply(lambda x: int(x[:2]))
+    df['hora'] = df['quarter'].apply(lambda x: x.hour)
     df['vel_kmh'] = df['vel']*3.6
     
     ### Selección de variables definitivas
+
 
     logging.info('Selección de las variables definitivas y agrupación: ...')
     df = df.loc[:,['fecha', 'hora', 'quarter','tid', 'corredor', 'from_to', 'sentido', 'principal', 'preferencial', 'cod_loc', 'localidad', 'vel_kmh']]
     df = df.groupby(['fecha', 'hora', 'quarter', 'tid', 'corredor', 'from_to', 'sentido', 'principal', 'preferencial', 'cod_loc', 'localidad'])['vel_kmh'].mean().reset_index()
     
+    
     return df
-
 
 
 def insert_function(union) -> Any:
@@ -244,7 +248,7 @@ def insert_function(union) -> Any:
     chunksize = 10000
 
     df = union
-    
+
     for i in range(int(len(df)/chunksize)+1):
         
         imin = i*chunksize
@@ -254,7 +258,7 @@ def insert_function(union) -> Any:
         
         try:
             chunk.columns = ['fecha', 'hora', 'quarter','tid', 'corredor', 'from_to', 'sentido', 'principal', 'preferencial', 'cod_loc', 'localidad', 'vel_kmh']
-            chunk.to_sql(name='velocidades_prueba', con=SQLALCHEMY_CONNECTION, schema='test', if_exists='append', method='multi', index=False)
+            chunk.to_sql(name='velocidades_prueba', con=SQLALCHEMY_CONNECTION, schema='test', if_exists='replace', method='multi', index=False)
             logging.info('Carga exitosa a la base de datos')
         except:
             logging.info("DB operational Error: ")
