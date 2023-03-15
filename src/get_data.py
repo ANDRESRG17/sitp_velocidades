@@ -185,7 +185,7 @@ def get_shape() -> gpd.GeoDataFrame:
     
     current_dir = Path.cwd()
     logging.info('Cargue del shape ...')
-    gdf = gpd.read_file(current_dir / 'wst_2023-02-16/wst_shape.shp')
+    gdf = gpd.read_file(current_dir / 'shapes\wst_2023-03-15\polygons_230315.shp')
     gdf = gdf.rename(columns = {'corr_14': 'principal', 'carril_pre': 'preferencial'})
     
     return gdf

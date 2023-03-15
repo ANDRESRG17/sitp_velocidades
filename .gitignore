@@ -179,6 +179,8 @@ cython_debug/
 # Shapes
 /shape_wst
 /wst_2023-02-16
+/shapes
+
 
 # libraries
 /geopandas
